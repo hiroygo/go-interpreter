@@ -26,31 +26,79 @@ func (l *Lexer) readChar() {
 	l.readPosition++
 }
 
-func (l *Lexer) NextToken() token.Token {
-	c := l.ch
-    literal := string(c)
-	l.readChar()
+func (l *Lexer) eatWhiteSpace() {
+	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+		l.readChar()
+	}
+}
 
+func (l *Lexer) readIdentifier() string {
+	head := l.position
+	for isLetter(l.ch) {
+		l.readChar()
+	}
+	return l.input[head:l.position]
+}
+
+func (l *Lexer) readNumber() string {
+	head := l.position
+	for isDigit(l.ch) {
+		l.readChar()
+	}
+	return l.input[head:l.position]
+}
+
+func (l *Lexer) NextToken() token.Token {
+	l.eatWhiteSpace()
+
+	c := l.ch
+	t := token.Token{}
 	switch c {
 	case '=':
-		return token.Token{Type: token.ASSIGN, Literal: literal}
+		t = newToken(token.ASSIGN, c)
 	case ';':
-		return token.Token{Type: token.SEMICOLON, Literal: literal}
+		t = newToken(token.SEMICOLON, c)
 	case '(':
-		return token.Token{Type: token.LPAREN, Literal: literal}
+		t = newToken(token.LPAREN, c)
 	case ')':
-		return token.Token{Type: token.RPAREN, Literal: literal}
+		t = newToken(token.RPAREN, c)
 	case ',':
-		return token.Token{Type: token.COMMA, Literal: literal}
+		t = newToken(token.COMMA, c)
 	case '+':
-		return token.Token{Type: token.PLUS, Literal: literal}
+		t = newToken(token.PLUS, c)
 	case '{':
-		return token.Token{Type: token.LBRACE, Literal: literal}
+		t = newToken(token.LBRACE, c)
 	case '}':
-		return token.Token{Type: token.RBRACE, Literal: literal}
+		t = newToken(token.RBRACE, c)
 	case 0:
-		return token.Token{Type: token.EOF, Literal: ""}
+		t = token.Token{Type: token.EOF, Literal: ""}
 	default:
-		return token.Token{Type: token.ILLEGAL, Literal: literal}
+		if isLetter(c) {
+			ident := l.readIdentifier()
+			tt := token.LookupIdent(ident)
+			// ここで return するのは readIdentifier() で
+			// 次の読み取るべき位置に移動済だから
+			return token.Token{Type: tt, Literal: ident}
+		} else if isDigit(c) {
+			strNum := l.readNumber()
+			return token.Token{Type: token.INT, Literal: strNum}
+		} else {
+			t = newToken(token.ILLEGAL, c)
+		}
 	}
+
+	l.readChar()
+	return t
+}
+
+func newToken(t token.TokenType, c byte) token.Token {
+	return token.Token{Type: t, Literal: string(c)}
+}
+
+func isLetter(c byte) bool {
+	return 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || c == '_'
+}
+
+func isDigit(c byte) bool {
+	return '0' <= c && c <= '9'
 }
