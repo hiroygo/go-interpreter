@@ -48,6 +48,13 @@ func (l *Lexer) readNumber() string {
 	return l.input[head:l.position]
 }
 
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	}
+	return l.input[l.readPosition]
+}
+
 func (l *Lexer) NextToken() token.Token {
 	l.eatWhiteSpace()
 
@@ -55,21 +62,45 @@ func (l *Lexer) NextToken() token.Token {
 	t := token.Token{}
 	switch c {
 	case '=':
-		t = newToken(token.ASSIGN, c)
-	case ';':
-		t = newToken(token.SEMICOLON, c)
-	case '(':
-		t = newToken(token.LPAREN, c)
-	case ')':
-		t = newToken(token.RPAREN, c)
-	case ',':
-		t = newToken(token.COMMA, c)
+		p := l.peekChar()
+		if p == '=' {
+			t = token.Token{Type: token.EQ, Literal: string(c) + string(p)}
+			l.readChar()
+		} else {
+			t = newToken(token.ASSIGN, c)
+		}
 	case '+':
 		t = newToken(token.PLUS, c)
+	case '-':
+		t = newToken(token.MINUS, c)
+	case '!':
+		p := l.peekChar()
+		if p == '=' {
+			t = token.Token{Type: token.NOT_EQ, Literal: string(c) + string(p)}
+			l.readChar()
+		} else {
+			t = newToken(token.BANG, c)
+		}
+	case '/':
+		t = newToken(token.SLASH, c)
+	case '*':
+		t = newToken(token.ASTERISK, c)
+	case '<':
+		t = newToken(token.LT, c)
+	case '>':
+		t = newToken(token.GT, c)
+	case ';':
+		t = newToken(token.SEMICOLON, c)
+	case ',':
+		t = newToken(token.COMMA, c)
 	case '{':
 		t = newToken(token.LBRACE, c)
 	case '}':
 		t = newToken(token.RBRACE, c)
+	case '(':
+		t = newToken(token.LPAREN, c)
+	case ')':
+		t = newToken(token.RPAREN, c)
 	case 0:
 		t = token.Token{Type: token.EOF, Literal: ""}
 	default:
@@ -79,12 +110,12 @@ func (l *Lexer) NextToken() token.Token {
 			// ここで return するのは readIdentifier() で
 			// 次の読み取るべき位置に移動済だから
 			return token.Token{Type: tt, Literal: ident}
-		} else if isDigit(c) {
+		}
+		if isDigit(c) {
 			strNum := l.readNumber()
 			return token.Token{Type: token.INT, Literal: strNum}
-		} else {
-			t = newToken(token.ILLEGAL, c)
 		}
+		t = newToken(token.ILLEGAL, c)
 	}
 
 	l.readChar()
