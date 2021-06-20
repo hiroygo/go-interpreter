@@ -104,7 +104,7 @@ func (l *Lexer) NextToken() token.Token {
 	case 0:
 		t = token.Token{Type: token.EOF, Literal: ""}
 	default:
-        // 言語のキーワードか変数名か判定する
+		// 言語のキーワードか変数名か判定する
 		if isLetter(c) {
 			ident := l.readIdentifier()
 			tt := token.LookupIdent(ident)
