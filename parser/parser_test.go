@@ -38,6 +38,33 @@ let foobar = 838383;
 	}
 }
 
+func TestReturnStatements(t *testing.T) {
+	input := `
+return 5;
+return 10;
+return 993322;
+`
+	p := New(lexer.New(input))
+	prg := p.ParseProgram()
+	if prg == nil {
+		t.Fatalf("ParseProgram() got nil")
+	}
+	hasParserErrors(t, p)
+	if len(prg.Statements) != 3 {
+		t.Fatalf("want len(Program.Statements) = %v, got %v", 3, len(prg.Statements))
+	}
+
+	for _, s := range prg.Statements {
+		returnStmt, ok := s.(*ast.ReturnStatement)
+		if !ok {
+			t.Fatalf("%T.(*ast.ReturnStatement) error", s)
+		}
+		if returnStmt.TokenLiteral() != "return" {
+			t.Fatalf("want ReturnStatement.TokenLiteral() = %q, got %q", "return", returnStmt.TokenLiteral())
+		}
+	}
+}
+
 func hasParserErrors(t *testing.T, p *Parser) {
 	t.Helper()
 	errs := p.Errors()
@@ -66,6 +93,6 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) {
 		t.Fatalf("want LetStatement.Name.Value = %q, got %q", name, let.Name.Value)
 	}
 	if let.Name.TokenLiteral() != name {
-		t.Fatalf("want LetStatement.Name.TokenLiteral()= %q, got %q", name, let.Name.Value)
+		t.Fatalf("want LetStatement.Name.TokenLiteral() = %q, got %q", name, let.Name.Value)
 	}
 }

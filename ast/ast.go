@@ -7,6 +7,8 @@ type Node interface {
 	TokenLiteral() string
 }
 
+// この言語の文は 'let 文' と 'return 文' のみ
+// 残りは式になる
 type Statement interface {
 	Node
 	// xxxNode メソッドはエラー検出用
@@ -61,4 +63,16 @@ func (i *Identifier) expressionNode() {}
 
 func (i *Identifier) TokenLiteral() string {
 	return i.Token.Literal
+}
+
+type ReturnStatement struct {
+	// Token = token.RETURN
+	Token       token.Token
+	ReturnValue Expression
+}
+
+func (r *ReturnStatement) statementNode() {}
+
+func (r *ReturnStatement) TokenLiteral() string {
+	return r.Token.Literal
 }
