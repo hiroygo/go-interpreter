@@ -38,6 +38,24 @@ let foobar = 838383;
 	}
 }
 
+func testLetStatement(t *testing.T, s ast.Statement, name string) {
+	t.Helper()
+
+	if s.TokenLiteral() != "let" {
+		t.Fatalf("want Statement.TokenLiteral() = 'let', got %q", s.TokenLiteral())
+	}
+	let, ok := s.(*ast.LetStatement)
+	if !ok {
+		t.Fatalf("%T.(*ast.LetStatement) error", s)
+	}
+	if let.Name.Value != name {
+		t.Fatalf("want LetStatement.Name.Value = %q, got %q", name, let.Name.Value)
+	}
+	if let.Name.TokenLiteral() != name {
+		t.Fatalf("want LetStatement.Name.TokenLiteral() = %q, got %q", name, let.Name.Value)
+	}
+}
+
 func TestReturnStatements(t *testing.T) {
 	input := `
 return 5;
@@ -77,22 +95,4 @@ func hasParserErrors(t *testing.T, p *Parser) {
 		t.Errorf("Parser error %d: %s", i, s)
 	}
 	t.FailNow()
-}
-
-func testLetStatement(t *testing.T, s ast.Statement, name string) {
-	t.Helper()
-
-	if s.TokenLiteral() != "let" {
-		t.Fatalf("want Statement.TokenLiteral() = 'let', got %q", s.TokenLiteral())
-	}
-	let, ok := s.(*ast.LetStatement)
-	if !ok {
-		t.Fatalf("%T.(*ast.LetStatement) error", s)
-	}
-	if let.Name.Value != name {
-		t.Fatalf("want LetStatement.Name.Value = %q, got %q", name, let.Name.Value)
-	}
-	if let.Name.TokenLiteral() != name {
-		t.Fatalf("want LetStatement.Name.TokenLiteral() = %q, got %q", name, let.Name.Value)
-	}
 }
