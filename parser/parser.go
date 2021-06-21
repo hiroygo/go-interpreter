@@ -59,12 +59,12 @@ func (p *Parser) parseStatement() ast.Statement {
 }
 
 func (p *Parser) parseLetStatement() *ast.LetStatement {
-	// e.g. "let x = 10;"
+	// e.g. 'let x = 10;'
 	let := &ast.LetStatement{Token: p.curToken}
 
-	// "x"
 	// 次の Token が INDENT のときは
 	// curToken に INDENT を読み込ませる
+	// 'x' を読み込み
 	if !p.expectPeek(token.IDENT) {
 		return nil
 	}
@@ -73,7 +73,7 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		Value: p.curToken.Literal,
 	}
 
-	// "="
+	// '='
 	if !p.expectPeek(token.ASSIGN) {
 		return nil
 	}
@@ -111,7 +111,7 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 }
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
-	// e.g. "return 10;"
+	// e.g. 'return 10;'
 	r := &ast.ReturnStatement{Token: p.curToken}
 
 	p.nextToken()

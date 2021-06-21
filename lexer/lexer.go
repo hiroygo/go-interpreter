@@ -6,12 +6,13 @@ type Lexer struct {
 	input        string
 	position     int  // 入力における現在の位置(現在の文字を指し示す)
 	readPosition int  // これから読み込む位置(現在の文字の次)
-	ch           byte // 現在検査中の文字
+	ch           byte // 現在の文字
 }
 
 func New(s string) *Lexer {
 	l := &Lexer{input: s}
 	// NextToken の実行前に呼び出す必要がある
+	// position などを設定するため
 	l.readChar()
 	return l
 }
@@ -57,8 +58,8 @@ func (l *Lexer) peekChar() byte {
 
 func (l *Lexer) NextToken() token.Token {
 	l.eatWhiteSpace()
-
 	c := l.ch
+
 	t := token.Token{}
 	switch c {
 	case '=':
@@ -104,7 +105,7 @@ func (l *Lexer) NextToken() token.Token {
 	case 0:
 		t = token.Token{Type: token.EOF, Literal: ""}
 	default:
-		// 言語のキーワードか変数名か判定する
+		// 言語のキーワードか変数名がここに来る
 		if isLetter(c) {
 			ident := l.readIdentifier()
 			tt := token.LookupIdent(ident)

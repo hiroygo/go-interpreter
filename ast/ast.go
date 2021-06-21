@@ -9,9 +9,10 @@ type Node interface {
 
 // この言語の文は 'let 文' と 'return 文' のみ
 // 残りは式になる
+// 'x + 10;' などは式文という
 type Statement interface {
 	Node
-	// xxxNode メソッドはエラー検出用
+	// xxxNode はエラー検出用
 	statementNode()
 }
 
@@ -21,6 +22,7 @@ type Expression interface {
 }
 
 // Program ノードは AST のルートノードになる
+// Program は文のリストから構成される
 type Program struct {
 	Statements []Statement
 }
@@ -33,9 +35,9 @@ func (p *Program) TokenLiteral() string {
 	}
 }
 
-// `let <identifier> = <expression>;`
-// e.g. `let x = 1;`
-// e.g. `let foo = add(x, y);`
+// 'let <identifier> = <expression>;'
+// e.g. 'let x = 1;'
+// e.g. 'let foo = add(x, y);'
 type LetStatement struct {
 	// Token = token.LET
 	Token token.Token
@@ -57,7 +59,7 @@ type Identifier struct {
 }
 
 // Expression インタフェースを満たす
-// Identifier が式になるのは `let add = fn(x, y) { return x + y; };` で
+// Identifier が式になるのは 'let add = fn(x, y) { return x + y; };' で
 // add(1, 2) とするような時
 func (i *Identifier) expressionNode() {}
 

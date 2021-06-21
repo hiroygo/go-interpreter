@@ -26,6 +26,7 @@ const (
 	NOT_EQ    = "!="
 
 	// 予約語を表す
+	// "return", "let" など
 	INT      = "INT"
 	FUNCTION = "FUNCTION"
 	LET      = "LET"
@@ -39,6 +40,7 @@ const (
 // デバッグしやすいように string にしておく
 type TokenType string
 
+// 変数トークンのときは Token{Type: IDENT, Literal: "foo"} のようになる
 type Token struct {
 	Type    TokenType
 	Literal string
