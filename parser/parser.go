@@ -8,11 +8,32 @@ import (
 	"github.com/hiroygo/go-interpreter/token"
 )
 
+const (
+	_ = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -x or !x
+	CALL        // myFunction(x)
+)
+
+type (
+	prefixParseFn func() ast.Expression
+	infixParseFn  func(ast.Expression) ast.Expression
+)
+
 type Parser struct {
-	l         *lexer.Lexer
+	l      *lexer.Lexer
+	errors []string
+
 	curToken  token.Token
 	peekToken token.Token
-	errors    []string
+
+	// TokenType と構文解析関数を対応させる
+	prefixParseFns map[token.TokenType]prefixParseFn
+	infixParseFns  map[token.TokenType]infixParseFn
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -22,7 +43,24 @@ func New(l *lexer.Lexer) *Parser {
 	p.nextToken()
 	p.nextToken()
 
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.registerPrefix(token.IDENT, p.parseIdentifier)
+
 	return p
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{
+		Token: p.curToken, Value: p.curToken.Literal,
+	}
+}
+
+func (p *Parser) registerPrefix(t token.TokenType, f prefixParseFn) {
+	p.prefixParseFns[t] = f
+}
+
+func (p *Parser) registerInfix(t token.TokenType, f infixParseFn) {
+	p.infixParseFns[t] = f
 }
 
 func (p *Parser) Errors() []string {
@@ -54,7 +92,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -121,6 +159,24 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	for !p.curTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
-
 	return r
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	// e.g. 'foobar;'
+	es := &ast.ExpressionStatement{Token: p.curToken}
+	es.Expression = p.parseExpression(LOWEST)
+	for !p.curTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+	return es
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := p.prefixParseFns[p.curToken.Type]
+	if prefix == nil {
+		return nil
+	}
+	leftExp := prefix()
+	return leftExp
 }

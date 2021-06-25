@@ -25,9 +25,6 @@ let foobar = 838383;
 
 	p := New(lexer.New(input))
 	prg := p.ParseProgram()
-	if prg == nil {
-		t.Fatalf("ParseProgram() got nil")
-	}
 	hasParserErrors(t, p)
 	if len(prg.Statements) != len(tests) {
 		t.Fatalf("want len(Program.Statements) = %v, got %v", len(tests), len(prg.Statements))
@@ -64,9 +61,6 @@ return 993322;
 `
 	p := New(lexer.New(input))
 	prg := p.ParseProgram()
-	if prg == nil {
-		t.Fatalf("ParseProgram() got nil")
-	}
 	hasParserErrors(t, p)
 	if len(prg.Statements) != 3 {
 		t.Fatalf("want len(Program.Statements) = %v, got %v", 3, len(prg.Statements))
@@ -80,6 +74,32 @@ return 993322;
 		if returnStmt.TokenLiteral() != "return" {
 			t.Fatalf("want ReturnStatement.TokenLiteral() = %q, got %q", "return", returnStmt.TokenLiteral())
 		}
+	}
+}
+
+func TestIdentifierExpression(t *testing.T) {
+	input := "foobar;"
+
+	p := New(lexer.New(input))
+	prg := p.ParseProgram()
+	hasParserErrors(t, p)
+	if len(prg.Statements) != 1 {
+		t.Fatalf("want len(Program.Statements) = %v, got %v", 1, len(prg.Statements))
+	}
+
+	stmt, ok := prg.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("%T.(*ast.ExpressionStatement) error", prg.Statements[0])
+	}
+	ident, ok := stmt.Expression.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("%T.(*ast.Identifier) error", stmt)
+	}
+	if ident.Value != "foobar" {
+		t.Fatalf("want Identifier.Value = %q, got %q", "foobar", ident.Value)
+	}
+	if ident.TokenLiteral() != "foobar" {
+		t.Fatalf("want Identifier.TokenLiteral() = %q, got %q", "foobar", ident.TokenLiteral())
 	}
 }
 
