@@ -155,3 +155,29 @@ func (i *IntegerLiteral) TokenLiteral() string {
 func (i *IntegerLiteral) String() string {
 	return i.Token.Literal
 }
+
+type PrefixExpression struct {
+	// 前置トークン
+	// e.g. '!'
+	Token token.Token
+
+	// '!' または '-' が入る
+	Operator string
+
+	Right Expression
+}
+
+func (p *PrefixExpression) expressionNode() {}
+
+func (p *PrefixExpression) TokenLiteral() string {
+	return p.Token.Literal
+}
+
+func (p *PrefixExpression) String() string {
+	var b bytes.Buffer
+	b.WriteString("(")
+	b.WriteString(p.Operator)
+	b.WriteString(p.Right.String())
+	b.WriteString(")")
+	return b.String()
+}

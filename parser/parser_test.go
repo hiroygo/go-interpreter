@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/hiroygo/go-interpreter/ast"
@@ -141,4 +142,57 @@ func hasParserErrors(t *testing.T, p *Parser) {
 		t.Errorf("Parser error %d: %s", i, s)
 	}
 	t.FailNow()
+}
+
+func TestParsingPrefixExpressions(t *testing.T) {
+	cases := []struct {
+		input        string
+		operator     string
+		integerValue int64
+	}{
+		{"!5;", "!", 5},
+		{"-15;", "-", 15},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.input, func(t *testing.T) {
+			t.Parallel()
+
+			p := New(lexer.New(c.input))
+			prg := p.ParseProgram()
+			hasParserErrors(t, p)
+			if len(prg.Statements) != 1 {
+				t.Fatalf("want len(Program.Statements) = %v, got %v", 1, len(prg.Statements))
+			}
+
+			stmt, ok := prg.Statements[0].(*ast.ExpressionStatement)
+			if !ok {
+				t.Fatalf("%T.(*ast.ExpressionStatement) error", prg.Statements[0])
+			}
+			exp, ok := stmt.Expression.(*ast.PrefixExpression)
+			if !ok {
+				t.Fatalf("%T.(*ast.PrefixExpression) error", stmt)
+			}
+			if exp.Operator != c.operator {
+				t.Fatalf("want PrefixExpression.Operator = %q, got %q", c.operator, exp.Operator)
+			}
+			testIntegerLiteral(t, exp.Right, c.integerValue)
+		})
+	}
+}
+
+func testIntegerLiteral(t *testing.T, e ast.Expression, v int64) {
+	t.Helper()
+
+	literal, ok := e.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("%T.(*ast.IntegerLiteral) error", literal)
+	}
+	if literal.Value != v {
+		t.Fatalf("want IntegerLiteral.Value = %d, got %d", v, literal.Value)
+	}
+	if literal.TokenLiteral() != fmt.Sprintf("%d", v) {
+		t.Fatalf("want IntegerLiteral.TokenLiteral() = '%d', got %q", v, literal.TokenLiteral())
+	}
 }
