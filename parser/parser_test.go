@@ -187,7 +187,7 @@ func testIntegerLiteral(t *testing.T, e ast.Expression, v int64) {
 
 	literal, ok := e.(*ast.IntegerLiteral)
 	if !ok {
-		t.Fatalf("%T.(*ast.IntegerLiteral) error", literal)
+		t.Fatalf("%T.(*ast.IntegerLiteral) error", e)
 	}
 	if literal.Value != v {
 		t.Fatalf("want IntegerLiteral.Value = %d, got %d", v, literal.Value)
