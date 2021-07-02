@@ -194,7 +194,7 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	// e.g. 'foobar;'
 	es := &ast.ExpressionStatement{Token: p.curToken}
 	es.Expression = p.parseExpression(LOWEST)
-	for !p.curTokenIs(token.SEMICOLON) {
+	for p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 	return es
