@@ -237,6 +237,7 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	return es
 }
 
+// Pratt 構文解析
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	prefix := p.prefixParseFns[p.curToken.Type]
 	if prefix == nil {
@@ -245,6 +246,12 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	}
 	leftExp := prefix()
 
+	// 引数で渡された優先順位より現在のトークンの `1 つ先のトークン` の優先順位が高い間、処理を繰り返す
+	// 式の解析は LOWEST から始まり、セミコロン直前まで読み取る
+	// peekTokenIs(token.SEMICOLON) の呼び出しは必須ではない
+	// なぜなら peekPrecedence() は対応するトークンが存在しない時 LOWEST を返すから
+	// ただし peekTokenIs(token.SEMICOLON) を記述したほうが、セミコロンが式終端デリミタとして
+	// わかりやすくなり、理解もしやすい
 	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {

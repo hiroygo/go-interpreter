@@ -281,10 +281,12 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			"(((a + (b * c)) + (d / e)) - f)",
 		},
 		{
+			// len(prg.Statements) == 2
 			"3 + 4; -5 * 5",
 			"(3 + 4)((-5) * 5)",
 		},
 		{
+			// len(prg.Statements) == 1
 			"5 > 4 == 3 < 4",
 			"((5 > 4) == (3 < 4))",
 		},
