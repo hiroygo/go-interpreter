@@ -148,10 +148,12 @@ func TestParsingPrefixExpressions(t *testing.T) {
 	cases := []struct {
 		input    string
 		operator string
-		v        int64
+		v        interface{}
 	}{
 		{"!5;", "!", 5},
 		{"-15;", "-", 15},
+		{"!true;", "!", true},
+		{"!false;", "!", false},
 	}
 
 	for _, c := range cases {
@@ -212,6 +214,21 @@ func testIdentifier(t *testing.T, e ast.Expression, v string) {
 	}
 }
 
+func testBooleanLiteral(t *testing.T, e ast.Expression, v bool) {
+	t.Helper()
+
+	literal, ok := e.(*ast.Boolean)
+	if !ok {
+		t.Fatalf("%T.(*ast.Boolean) error", e)
+	}
+	if literal.Value != v {
+		t.Fatalf("want Boolean.Value = %t, got %t", v, literal.Value)
+	}
+	if literal.TokenLiteral() != fmt.Sprintf("%t", v) {
+		t.Fatalf("want IntegerLiteral.TokenLiteral() = '%t', got %q", v, literal.TokenLiteral())
+	}
+}
+
 func testLiteralExpression(t *testing.T, e ast.Expression, expected interface{}) {
 	t.Helper()
 
@@ -222,6 +239,8 @@ func testLiteralExpression(t *testing.T, e ast.Expression, expected interface{})
 		testIntegerLiteral(t, e, v)
 	case string:
 		testIdentifier(t, e, v)
+	case bool:
+		testBooleanLiteral(t, e, v)
 	default:
 		t.Fatalf("unexpected type, %T", v)
 	}
@@ -257,6 +276,9 @@ func TestParsingInfixExpressions(t *testing.T) {
 		{"5 < 5;", 5, "<", 5},
 		{"5 == 5;", 5, "==", 5},
 		{"5 != 5;", 5, "!=", 5},
+		{"true == true", true, "==", true},
+		{"true != false", true, "!=", false},
+		{"false == false", false, "==", false},
 	}
 
 	for _, c := range cases {
@@ -335,6 +357,22 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			"3 + 4 * 5 == 3 * 1 + 4 * 5",
 			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
 		},
+		{
+			"true",
+			"true",
+		},
+		{
+			"false",
+			"false",
+		},
+		{
+			"3 > 5 == false",
+			"((3 > 5) == false)",
+		},
+		{
+			"3 < 5 == true",
+			"((3 < 5) == true)",
+		},
 	}
 
 	for _, c := range cases {
@@ -348,6 +386,42 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 			actual := prg.String()
 			if actual != c.expected {
 				t.Fatalf("want Program.String() = %q, got %q", c.expected, actual)
+			}
+		})
+	}
+}
+
+func TestBooleanExpression(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected bool
+	}{
+		{"true;", true},
+		{"false;", false},
+	}
+
+	for _, c := range cases {
+		c := c
+		t.Run(c.input, func(t *testing.T) {
+			t.Parallel()
+
+			p := New(lexer.New(c.input))
+			prg := p.ParseProgram()
+			hasParserErrors(t, p)
+			if len(prg.Statements) != 1 {
+				t.Fatalf("want len(Program.Statements) = %v, got %v", 1, len(prg.Statements))
+			}
+
+			stmt, ok := prg.Statements[0].(*ast.ExpressionStatement)
+			if !ok {
+				t.Fatalf("%T.(*ast.ExpressionStatement) error", prg.Statements[0])
+			}
+			boo, ok := stmt.Expression.(*ast.Boolean)
+			if !ok {
+				t.Fatalf("%T.(*ast.Boolean) error", stmt)
+			}
+			if boo.Value != c.expected {
+				t.Fatalf("want Boolean.Value = %t, got %t", c.expected, boo.Value)
 			}
 		})
 	}
