@@ -95,6 +95,8 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	return literal
 }
 
+// '!' はこの関数で解析される
+// '!' は右結合になる
 func (p *Parser) parsePrefixExpression() ast.Expression {
 	exp := &ast.PrefixExpression{
 		Token:    p.curToken,
@@ -105,6 +107,8 @@ func (p *Parser) parsePrefixExpression() ast.Expression {
 	return exp
 }
 
+// '+' や '*' はこの関数で解析される
+// '+' は左結合になる(= 解析済みの式は '+' に吸い込まれる)
 func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	exp := &ast.InfixExpression{
 		Token:    p.curToken,
@@ -116,6 +120,16 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	precedence := p.curPrecedence()
 
 	p.nextToken()
+
+	// 以下の変更を加えると '+' を右結合にできる
+	/*
+		if exp.Operator == "+" {
+			exp.Right = p.parseExpression(precedence - 1)
+		} else {
+			exp.Right = p.parseExpression(precedence)
+		}
+	*/
+
 	exp.Right = p.parseExpression(precedence)
 	return exp
 }
