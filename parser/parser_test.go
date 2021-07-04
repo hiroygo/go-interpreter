@@ -146,9 +146,9 @@ func hasParserErrors(t *testing.T, p *Parser) {
 
 func TestParsingPrefixExpressions(t *testing.T) {
 	cases := []struct {
-		input        string
-		operator     string
-		integerValue int64
+		input    string
+		operator string
+		v        int64
 	}{
 		{"!5;", "!", 5},
 		{"-15;", "-", 15},
@@ -177,7 +177,7 @@ func TestParsingPrefixExpressions(t *testing.T) {
 			if exp.Operator != c.operator {
 				t.Fatalf("want PrefixExpression.Operator = %q, got %q", c.operator, exp.Operator)
 			}
-			testIntegerLiteral(t, exp.Right, c.integerValue)
+			testLiteralExpression(t, exp.Right, c.v)
 		})
 	}
 }
@@ -197,12 +197,57 @@ func testIntegerLiteral(t *testing.T, e ast.Expression, v int64) {
 	}
 }
 
+func testIdentifier(t *testing.T, e ast.Expression, v string) {
+	t.Helper()
+
+	ident, ok := e.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("%T.(*ast.Identifier) error", e)
+	}
+	if ident.Value != v {
+		t.Fatalf("want Identifier.Value = %q, got %q", v, ident.Value)
+	}
+	if ident.TokenLiteral() != v {
+		t.Fatalf("want Identifier.TokenLiteral() = %q, got %q", v, ident.TokenLiteral())
+	}
+}
+
+func testLiteralExpression(t *testing.T, e ast.Expression, expected interface{}) {
+	t.Helper()
+
+	switch v := expected.(type) {
+	case int:
+		testIntegerLiteral(t, e, int64(v))
+	case int64:
+		testIntegerLiteral(t, e, v)
+	case string:
+		testIdentifier(t, e, v)
+	default:
+		t.Fatalf("unexpected type, %T", v)
+	}
+}
+
+func testInfixExpression(t *testing.T, e ast.Expression, left interface{},
+	operator string, right interface{}) {
+	t.Helper()
+
+	opExp, ok := e.(*ast.InfixExpression)
+	if !ok {
+		t.Fatalf("%T.(*ast.InfixExpression) error", e)
+	}
+	testLiteralExpression(t, opExp.Left, left)
+	if opExp.Operator != operator {
+		t.Fatalf("want InfixExpression.Operator = %q, got %q", operator, opExp.Operator)
+	}
+	testLiteralExpression(t, opExp.Right, right)
+}
+
 func TestParsingInfixExpressions(t *testing.T) {
 	cases := []struct {
 		input      string
-		leftValue  int64
+		leftValue  interface{}
 		operator   string
-		rightValue int64
+		rightValue interface{}
 	}{
 		{"5 + 5;", 5, "+", 5},
 		{"5 - 5;", 5, "-", 5},
@@ -230,15 +275,7 @@ func TestParsingInfixExpressions(t *testing.T) {
 			if !ok {
 				t.Fatalf("%T.(*ast.ExpressionStatement) error", prg.Statements[0])
 			}
-			exp, ok := stmt.Expression.(*ast.InfixExpression)
-			if !ok {
-				t.Fatalf("%T.(*ast.InfixExpression) error", stmt)
-			}
-			testIntegerLiteral(t, exp.Left, c.leftValue)
-			if exp.Operator != c.operator {
-				t.Fatalf("want InfixExpression.Operator = %q, got %q", c.operator, exp.Operator)
-			}
-			testIntegerLiteral(t, exp.Right, c.rightValue)
+			testInfixExpression(t, stmt.Expression, c.leftValue, c.operator, c.rightValue)
 		})
 	}
 }
